@@ -13,6 +13,7 @@ def user_add_kb() -> InlineKeyboardMarkup:
                          [InlineKeyboardButton('Отклонить запрос', callback_data='cancel_query')]])
     return kb
 
+
 def test_kb():
     kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/test')]])
     return kb
