@@ -1,8 +1,8 @@
-
 from pydantic import BaseSettings, SecretStr, BaseModel
 from ipaddress import IPv4Address
 
 BLOCKING_TIME = 5
+
 
 class Settings(BaseSettings):
     bot_token: SecretStr
