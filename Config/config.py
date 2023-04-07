@@ -23,3 +23,5 @@ class Resource(BaseModel):
     resource_name: str
     domain_name: str
     ip_address: IPv4Address
+    users_id: list
+    describe: str

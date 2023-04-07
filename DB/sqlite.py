@@ -1,6 +1,8 @@
 import sqlite3 as sq
 
-from Config.config import User
+from aiogram.utils import json
+
+from Config.config import User, Resource
 
 
 async def db_start() -> None:
@@ -12,8 +14,13 @@ async def db_start() -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS users(user_id TEXT PRIMARY KEY, nick TEXT, user_name TEXT, "
                 "is_administrator BOOLEAN)")
     cur.execute(
-        "CREATE TABLE IF NOT EXISTS resources(resource_name TEXT PRIMARY KEY, ip_address TEXT, domain_name TEXT)")
+        "CREATE TABLE IF NOT EXISTS resources(ip_address TEXT PRIMARY KEY, resource_name TEXT, domain_name TEXT,"
+        " users_id TEXT, describe TEXT)")
     db.commit()
+
+
+async def check_users_exist() -> list:
+    return cur.execute("SELECT * FROM users").fetchall()
 
 
 async def create_user(new_user: User) -> sq.Cursor:
@@ -25,6 +32,16 @@ async def create_user(new_user: User) -> sq.Cursor:
     return user
 
 
+async def create_resource(new_resource: Resource) -> sq.Cursor:
+    resource = cur.execute("INSERT INTO resources VALUES (?, ?, ?, ?, ?)", (new_resource.resource_name,
+                                                                            new_resource.domain_name,
+                                                                            new_resource.ip_address,
+                                                                            json.dumps(new_resource.users_id),
+                                                                            new_resource.describe))
+    db.commit()
+    return resource
+
+
 async def edit_resources(state, resource_name) -> None:
     async with state.proxy() as data:
         cur.execute(f"UPDATE resources SET resource_name = '{data['resource_name']}',"
@@ -34,6 +51,5 @@ async def edit_resources(state, resource_name) -> None:
         db.commit()
 
 
-async def get_admin():
-    admins = cur.execute("SELECT user_id FROM users WHERE is_administrator == 1").fetchall()
-    return admins
+async def get_admin() -> list:
+    return cur.execute("SELECT user_id FROM users WHERE is_administrator == 1").fetchall()

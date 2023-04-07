@@ -5,7 +5,7 @@ from FSM.states import UserStates
 
 
 def return_user_data(user: types.User) -> tuple:
-    return (user.id, user.username, user.full_name)
+    return user.id, user.username, user.full_name
 
 
 async def create_new_user(
