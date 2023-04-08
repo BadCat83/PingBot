@@ -10,7 +10,7 @@ async def add_new_user(callback: types.CallbackQuery, state: FSMContext) -> None
 
 
 async def add_new_admin(callback: types.CallbackQuery, state: FSMContext) -> None:
-    await create_new_user(callback, bot, state, dp, is_adminstrator=True)
+    await create_new_user(callback, bot, state, dp, is_administrator=True)
 
 
 async def cancel_query(callback: types.CallbackQuery):

@@ -23,6 +23,10 @@ async def check_users_exist() -> list:
     return cur.execute("SELECT * FROM users").fetchall()
 
 
+async def check_user(user_id) -> list:
+    return cur.execute("SELECT is_administrator FROM users WHERE user_id = ?", (user_id, )).fetchall()
+
+
 async def create_user(new_user: User) -> sq.Cursor:
     # user = cur.execute(f"SELECT 1 FROM users WHERE user_id == {user_id}").fetchone()
     # if not user:

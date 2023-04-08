@@ -1,7 +1,6 @@
 from aiogram import executor
 from Middlewares.middlewares import ThrottlingMiddleware
-from init_bot import dp
-from Handlers.message_handlers import db
+from init_bot import dp, db
 
 from Handlers import callback_handlers, message_handlers
 
