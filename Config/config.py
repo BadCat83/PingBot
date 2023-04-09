@@ -1,7 +1,7 @@
 from pydantic import BaseSettings, SecretStr, BaseModel
 from ipaddress import IPv4Address
 
-BLOCKING_TIME = 5
+BLOCKING_TIME = 1
 
 
 class Settings(BaseSettings):

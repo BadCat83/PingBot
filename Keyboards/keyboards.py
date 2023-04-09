@@ -13,6 +13,13 @@ def user_add_kb() -> InlineKeyboardMarkup:
                          [InlineKeyboardButton('Отклонить запрос', callback_data='cancel_query')]])
 
 
+async def choose_users_kb(users_list: list) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(f"{user[2]}", callback_data=f'add_user_{user[0]}')] for user in users_list
+    ])
+    return kb.add(InlineKeyboardButton("Сохранить...", callback_data='add_resource'))
+
+
 def admin_kb():
     return ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/add_resource')]], resize_keyboard=True)
 

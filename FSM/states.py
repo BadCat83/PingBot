@@ -10,4 +10,5 @@ class ResourceStates(StatesGroup):
     resource_name = State()
     ip_address = State()
     describe = State()
+    add_users = State()
 

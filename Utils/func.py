@@ -1,6 +1,6 @@
 from aiogram import types, Bot, Dispatcher
 from aiogram.dispatcher import FSMContext
-from DB.sqlite import create_user
+from DB.sqlite import create_user, check_users_exist
 from FSM.states import UserStates
 from Keyboards.keyboards import admin_kb
 
@@ -39,3 +39,10 @@ async def create_new_user(
         await bot.send_message(user_id,
                                f"Сожалею, но Ваш запрос был отклонен администратором {callback.from_user.full_name}")
     await callback.answer()
+
+
+async def get_users(resource_ip=None) -> list:
+    users_list = []
+    if not resource_ip:
+        users_list = await check_users_exist()
+    return users_list

@@ -14,8 +14,8 @@ async def db_start() -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS users(user_id TEXT PRIMARY KEY, nick TEXT, user_name TEXT, "
                 "is_administrator BOOLEAN)")
     cur.execute(
-        "CREATE TABLE IF NOT EXISTS resources(ip_address TEXT PRIMARY KEY, resource_name TEXT, domain_name TEXT,"
-        " users_id TEXT, describe TEXT)")
+        "CREATE TABLE IF NOT EXISTS resources(ip_address TEXT PRIMARY KEY, resource_name TEXT, describe TEXT,"
+        " users_list TEXT)")
     db.commit()
 
 
@@ -23,8 +23,14 @@ async def check_users_exist() -> list:
     return cur.execute("SELECT * FROM users").fetchall()
 
 
+# async def get_users(resource_ip=None) -> list:
+#     if not resource_ip:
+#         return cur.execute("SELECT users_id FROM resources")
+
+
+
 async def check_user(user_id) -> list:
-    return cur.execute("SELECT is_administrator FROM users WHERE user_id = ?", (user_id, )).fetchall()
+    return cur.execute("SELECT is_administrator FROM users WHERE user_id = ?", (user_id,)).fetchall()
 
 
 async def create_user(new_user: User) -> sq.Cursor:
@@ -37,11 +43,11 @@ async def create_user(new_user: User) -> sq.Cursor:
 
 
 async def create_resource(new_resource: Resource) -> sq.Cursor:
-    resource = cur.execute("INSERT INTO resources VALUES (?, ?, ?, ?, ?)", (new_resource.resource_name,
-                                                                            new_resource.domain_name,
-                                                                            new_resource.ip_address,
-                                                                            json.dumps(new_resource.users_id),
-                                                                            new_resource.describe))
+    print(str(new_resource.ip_address))
+    resource = cur.execute("INSERT INTO resources VALUES (?, ?, ?, ?)", (str(new_resource.ip_address),
+                                                                         new_resource.resource_name,
+                                                                         new_resource.describe,
+                                                                         json.dumps(new_resource.users_id)))
     db.commit()
     return resource
 
