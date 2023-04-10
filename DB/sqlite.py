@@ -28,9 +28,17 @@ async def check_users_exist() -> list:
 #         return cur.execute("SELECT users_id FROM resources")
 
 
+async def check_user(user_id: str) -> list:
+    return cur.execute("SELECT is_administrator FROM users WHERE user_id = ?", (user_id,)).fetchone()
 
-async def check_user(user_id) -> list:
-    return cur.execute("SELECT is_administrator FROM users WHERE user_id = ?", (user_id,)).fetchall()
+
+async def get_resources() -> list:
+    return cur.execute("SELECT * FROM resources").fetchall()
+
+
+async def get_resource_users(resource_ip: str) -> list:
+    return json.loads(cur.execute("SELECT users_list FROM resources"
+                                  " WHERE ip_address = ?", (resource_ip,)).fetchone()[0])
 
 
 async def create_user(new_user: User) -> sq.Cursor:
@@ -43,13 +51,17 @@ async def create_user(new_user: User) -> sq.Cursor:
 
 
 async def create_resource(new_resource: Resource) -> sq.Cursor:
-    print(str(new_resource.ip_address))
     resource = cur.execute("INSERT INTO resources VALUES (?, ?, ?, ?)", (str(new_resource.ip_address),
                                                                          new_resource.resource_name,
                                                                          new_resource.describe,
                                                                          json.dumps(new_resource.users_id)))
     db.commit()
     return resource
+
+
+async def add_users_to_res(users_id: list, ip_address: str) -> None:
+    cur.execute("UPDATE resources SET users_list = ? WHERE ip_address = ?", (json.dumps(users_id), ip_address))
+    db.commit()
 
 
 async def edit_resources(state, resource_name) -> None:

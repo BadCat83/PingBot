@@ -1,5 +1,6 @@
 from aiogram import executor
 from Middlewares.middlewares import ThrottlingMiddleware
+from Utils.func import authorization_on_startup
 from init_bot import dp, db
 
 from Handlers import callback_handlers, message_handlers
@@ -7,6 +8,7 @@ from Handlers import callback_handlers, message_handlers
 
 async def on_startup(_):
     await db.db_start()
+    await authorization_on_startup(dp)
 
 
 callback_handlers.register_callback_handlers(dp)

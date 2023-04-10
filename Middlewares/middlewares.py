@@ -1,9 +1,13 @@
 import asyncio
 from aiogram import types, Dispatcher
+from aiogram.dispatcher import FSMContext
 
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from aiogram.utils.exceptions import Throttled
 from aiogram.dispatcher.handler import CancelHandler, current_handler
+
+from DB.sqlite import check_user
+from FSM.states import UserStates, AdminState
 from Utils.formating import format_ending
 from Config.config import BLOCKING_TIME
 
@@ -23,7 +27,21 @@ class ThrottlingMiddleware(BaseMiddleware):
             await self.msg_throttle(msg, _t)
             raise CancelHandler()
 
-    async def msg_throttle(self, msg: types.Message, throttled: Throttled):
+        # await self.check_authorization(msg, data['state'])
+
+    # @staticmethod
+    # async def check_authorization(msg: types.Message, state: FSMContext):
+    #     async with state.proxy() as data:
+    #         print(data.state)
+    #         if not data.state:
+    #             if user_exist := await check_user(msg.from_user.id):
+    #                 if user_exist[0]:
+    #                     await AdminState.admin.set()
+    #                 else:
+    #                     await AdminState.user.set()
+
+    @staticmethod
+    async def msg_throttle(msg: types.Message, throttled: Throttled):
         delta = throttled.rate - throttled.delta
         if throttled.exceeded_count <= 2:
             await msg.reply(f"Вы сможете написать сообщение через {int(delta)} секунд{format_ending(int(delta))}")

@@ -1,8 +1,8 @@
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 
-from Config.config import User, Resource
-from FSM.states import UserStates, ResourceStates
+from Config.config import User
+from FSM.states import ResourceStates, EditResourceStates, AdminState
 import Keyboards.keyboards as kb
 from Utils.func import get_users
 from init_bot import bot, db
@@ -17,10 +17,11 @@ async def start_cmd(msg: types.Message, state: FSMContext) -> None:
                      is_administrator=True)
         await db.create_user(admin)
         await msg.answer("Теперь Вы являетесь основным администратором данного бота", reply_markup=kb.admin_kb())
+        await msg.delete()
+        await AdminState.admin.set()
     elif not bool(is_administrator := await db.check_user(msg.from_user.id)):
         await msg.answer("Пожалуйста, подождите пока ваш профиль одобрит администратор.")
         await msg.delete()
-        await UserStates.unapproved.set()
         user = User(user_id=msg.from_user.id,
                     nick=msg.from_user.username if msg.from_user.username else '',
                     user_name=msg.from_user.full_name,
@@ -33,25 +34,35 @@ async def start_cmd(msg: types.Message, state: FSMContext) -> None:
                                             f'ID пользователя: "{msg.from_user.id}"\n',
                                    reply_markup=kb.user_add_kb())
     else:
-        await msg.answer("Вы авторизованы в системе, можете продолжать работу",
-                         reply_markup=kb.admin_kb() if is_administrator else kb.user_kb())
-    await msg.delete()
+        await msg.answer(f"Вы авторизованы в системе в качестве"
+                         f" {'администратора' if is_administrator[0] else 'пользователя'}, можете продолжать работу",
+                         reply_markup=kb.admin_kb() if is_administrator[0] else kb.user_kb())
 
 
-async def help_cmd(msg: types.Message):
-    is_admin = await db.check_user(msg.from_user.id)
+async def help_cmd(msg: types.Message, state: FSMContext):
+    is_admin = 'admin' in (await state.get_state())
     text = f"Данный бот позволяет пинговать заданные администратором ресурсы и слать оповещения подписавшимся" \
            f" на ресурс пользователям оповещения в случае недоступности ресурса.\n<b>/help</b> - Вывести помощь" \
            f" по командам бота.\n<b>/start</b> - Начать работу с ботом, первый пользователь начавший работу при " \
-           f"пустой базе становится адимнистратором.\n{'<b>/add_resource</b> - Добавить ресурс.' if is_admin else ''}"
+           f"пустой базе становится адимнистратором.\n" \
+           f"{'<b>/add_resource</b> - Добавить ресурс.' if is_admin else '<b>/subscribe_to_resource</b> - Подписаться на ресурс.'}\n" \
+           f"{'<b>/add_user_to_resource</b> - Добавить пользователя к мониторингу ресурса' if is_admin else ''}"
     await msg.answer(text, parse_mode='HTML')
     await msg.delete()
 
 
 async def cancel_cmd(msg: types.Message, state: FSMContext) -> None:
     await state.finish()
+    await AdminState.admin.set()
     await msg.answer("Вы отменили действие", reply_markup=kb.admin_kb())
     await msg.delete()
+
+
+async def add_user_to_resource(msg: types.Message) -> None:
+    await msg.answer("Выберите ресурс к которому необходимо добавить пользователя",
+                     reply_markup=await kb.add_users_to_res_kb(await db.get_resources()), )
+    await msg.delete()
+    await EditResourceStates.add_user.set()
 
 
 async def add_resource(msg: types.Message) -> None:
@@ -88,16 +99,32 @@ async def add_describe(msg: types.Message, state: FSMContext) -> None:
     await ResourceStates.next()
 
 
+async def choose_resource(msg: types.Message, state: FSMContext) -> None:
+    resources = await db.get_resources()
+    print(resources)
+    for resource in resources.copy():
+        if str(msg.from_user.id) in resource[3]:
+            resources.remove(resource)
+    print(resources)
+    if not resources:
+        await msg.answer("Нет ресурсов на которые Вы не подписаны!", reply_markup=kb.user_kb())
+    # await msg.answer("Вы берите ресурс на который хотите подписаться",
+    #                  reply_markup=await kb.add_users_to_res_kb(), )
+    await msg.delete()
+
+
 async def send_echo(msg: types.Message) -> None:
     await msg.answer(msg.text)
 
 
 def register_message_handlers(dp: Dispatcher):
-    dp.register_message_handler(start_cmd, commands=['start', ])
-    dp.register_message_handler(help_cmd, commands=['help', ])
-    dp.register_message_handler(add_resource, commands=['add_resource', ])
+    dp.register_message_handler(start_cmd, commands=['start', ], state='*')
+    dp.register_message_handler(help_cmd, commands=['help', ], state=[AdminState.admin, AdminState.user])
+    dp.register_message_handler(add_resource, commands=['add_resource', ], state=AdminState.admin)
+    dp.register_message_handler(choose_resource, commands=['choose_resources', ], state=AdminState.user)
+    dp.register_message_handler(add_user_to_resource, commands=['add_user_to_resource', ], state=AdminState.admin)
     dp.register_message_handler(cancel_cmd, commands=['cancel'], state='*')
     dp.register_message_handler(add_resource_name, state=ResourceStates.resource_name)
     dp.register_message_handler(add_ip_address, state=ResourceStates.ip_address)
     dp.register_message_handler(add_describe, state=ResourceStates.describe)
-    dp.register_message_handler(send_echo, state=UserStates.approved)
+    dp.register_message_handler(send_echo, state=[AdminState.admin, AdminState.user])
