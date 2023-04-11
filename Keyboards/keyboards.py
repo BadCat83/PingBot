@@ -20,24 +20,30 @@ async def choose_users_kb(users_list: list) -> InlineKeyboardMarkup:
     return kb.add(InlineKeyboardButton("Сохранить...", callback_data='save'))
 
 
-async def add_users_to_res_kb(resources_list: list) -> InlineKeyboardMarkup:
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(f"{resource[1]}",
-                              callback_data=f'{resource[0]},{resource[1]}')] for resource in
-        resources_list
-    ])
+async def add_users_to_res_kb(resources_list: list, first_time_use: bool = False) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardMarkup(row_width=3)
+    if resources_list:
+        for resource in resources_list:
+            kb.insert(
+                InlineKeyboardButton(f"{resource[1]}", callback_data=f'{resource[0]},{resource[1]},{resource[3]}'))
+    if not first_time_use:
+        kb.add(InlineKeyboardButton("Сохранить", callback_data='save_subscribe'))
     return kb.add(InlineKeyboardButton("Выйти", callback_data='exit'))
 
 
 def admin_kb():
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton('/add_resource')],
-        [KeyboardButton('/add_user_to_resource')]
+        [KeyboardButton('/add_user_to_resource')],
+        [KeyboardButton('/show_subscribe')]
     ], resize_keyboard=True, one_time_keyboard=True)
 
 
 def user_kb():
-    return ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/choose_resources')]], resize_keyboard=True)
+    return ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/choose_resources')],
+                                         [KeyboardButton('/show_subscribe')]],
+                               resize_keyboard=True,
+                               one_time_keyboard=True)
 
 
 def cancel_kb() -> ReplyKeyboardMarkup:

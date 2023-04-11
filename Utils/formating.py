@@ -6,3 +6,9 @@ def format_ending(num: int) -> str:
         return 'ы'
     else:
         return ''
+
+def get_resources_list(resources_list: list) -> str:
+    formatted_string = ' - '
+    for resource in resources_list:
+        formatted_string += f'<em><b>{resource[1]}</b></em>' + ', '
+    return formatted_string[:-2]

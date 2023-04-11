@@ -75,3 +75,8 @@ async def add_user(callback: types.CallbackQuery, state: FSMContext) -> None:
                                               reply_markup=await choose_users_kb(data['users_list']))
                 break
     await callback.answer()
+
+async def exit_func(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await callback.message.delete()
+    await callback.answer()
+    await state.finish()

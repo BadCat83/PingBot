@@ -1,9 +1,12 @@
+import ast
+
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 
 from Config.config import User
 from FSM.states import ResourceStates, EditResourceStates, AdminState
 import Keyboards.keyboards as kb
+from Utils.formating import get_resources_list
 from Utils.func import get_users
 from init_bot import bot, db
 import ipaddress
@@ -37,6 +40,7 @@ async def start_cmd(msg: types.Message, state: FSMContext) -> None:
         await msg.answer(f"Вы авторизованы в системе в качестве"
                          f" {'администратора' if is_administrator[0] else 'пользователя'}, можете продолжать работу",
                          reply_markup=kb.admin_kb() if is_administrator[0] else kb.user_kb())
+        await msg.delete()
 
 
 async def help_cmd(msg: types.Message, state: FSMContext):
@@ -46,7 +50,8 @@ async def help_cmd(msg: types.Message, state: FSMContext):
            f" по командам бота.\n<b>/start</b> - Начать работу с ботом, первый пользователь начавший работу при " \
            f"пустой базе становится адимнистратором.\n" \
            f"{'<b>/add_resource</b> - Добавить ресурс.' if is_admin else '<b>/subscribe_to_resource</b> - Подписаться на ресурс.'}\n" \
-           f"{'<b>/add_user_to_resource</b> - Добавить пользователя к мониторингу ресурса' if is_admin else ''}"
+           f"{'<b>/add_user_to_resource</b> - Добавить пользователя к мониторингу ресурса' if is_admin else ''}\n" \
+           f"<b>/show_subscribe</b> - Показать подписки"
     await msg.answer(text, parse_mode='HTML')
     await msg.delete()
 
@@ -101,15 +106,31 @@ async def add_describe(msg: types.Message, state: FSMContext) -> None:
 
 async def choose_resource(msg: types.Message, state: FSMContext) -> None:
     resources = await db.get_resources()
-    print(resources)
     for resource in resources.copy():
-        if str(msg.from_user.id) in resource[3]:
+        if resource[3][1:-1] and str(msg.from_user.id) in resource[3]:
             resources.remove(resource)
-    print(resources)
     if not resources:
         await msg.answer("Нет ресурсов на которые Вы не подписаны!", reply_markup=kb.user_kb())
-    # await msg.answer("Вы берите ресурс на который хотите подписаться",
-    #                  reply_markup=await kb.add_users_to_res_kb(), )
+    else:
+        async with state.proxy() as data:
+            data['resources'] = []
+            data['resources_list'] = resources
+        await msg.answer("Выберите ресурс на который хотите подписаться",
+                         reply_markup=await kb.add_users_to_res_kb(resources, first_time_use=True), )
+    await msg.delete()
+
+async def show_subscribe(msg: types.Message, state: FSMContext) -> None:
+    resources_list = await db.get_resources()
+
+    for resource in resources_list.copy():
+        if str(msg.from_user.id) not in ast.literal_eval(resource[3]):
+            resources_list.remove(resource)
+    if resources_list:
+        resources_list = get_resources_list(resources_list)
+        await msg.answer(f"Вы одписаны на следующие ресурсы:{resources_list}"
+                         , parse_mode='HTML', reply_markup=kb.user_kb())
+    else:
+        await msg.answer("Вы подписаны на все возможные ресурсы!", reply_markup=kb.user_kb())
     await msg.delete()
 
 
@@ -122,6 +143,8 @@ def register_message_handlers(dp: Dispatcher):
     dp.register_message_handler(help_cmd, commands=['help', ], state=[AdminState.admin, AdminState.user])
     dp.register_message_handler(add_resource, commands=['add_resource', ], state=AdminState.admin)
     dp.register_message_handler(choose_resource, commands=['choose_resources', ], state=AdminState.user)
+    dp.register_message_handler(show_subscribe, commands=['show_subscribe', ],
+                                state=[AdminState.admin, AdminState.user])
     dp.register_message_handler(add_user_to_resource, commands=['add_user_to_resource', ], state=AdminState.admin)
     dp.register_message_handler(cancel_cmd, commands=['cancel'], state='*')
     dp.register_message_handler(add_resource_name, state=ResourceStates.resource_name)
