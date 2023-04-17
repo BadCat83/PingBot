@@ -49,6 +49,7 @@ async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None
     else:
         await add_user(callback, state)
 
+
 async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext) -> None:
     if callback.data == 'exit':
         await exit_func(callback, state)
@@ -77,16 +78,12 @@ async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext
         await callback.answer()
 
 
-
-
-
-
 async def choose_resource(callback: types.CallbackQuery, state: FSMContext) -> None:
     if callback.data == 'exit':
         await exit_func(callback, state)
         return await AdminState.admin.set()
     async with state.proxy() as data:
-        data['resource_ip'], data['resource_name'] = callback.data.split(',')
+        data['resource_ip'], data['resource_name'], _ = callback.data.split(',')
         data["users_list"], data["current_users"] = await get_users(data['resource_ip'])
 
     if not data["users_list"]:
@@ -115,7 +112,8 @@ async def add_user_to_res(callback: types.CallbackQuery, state: FSMContext) -> N
                                                   reply_markup=kb.admin_kb())
                 finally:
                     await callback.message.delete()
-                    await callback.answer(f"Все назначенные пользователи теперь мониторят ресурс {data['resource_name']}!")
+                    await callback.answer(
+                        f"Все назначенные пользователи теперь мониторят ресурс {data['resource_name']}!")
                     # await state.finish()
                     # await AdminState.admin.set()
             else:

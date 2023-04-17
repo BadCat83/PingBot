@@ -121,6 +121,7 @@ async def choose_resource(msg: types.Message, state: FSMContext) -> None:
 
 async def show_subscribe(msg: types.Message, state: FSMContext) -> None:
     resources_list = await db.get_resources()
+    is_admin = 'admin' in (await state.get_state())
 
     for resource in resources_list.copy():
         if str(msg.from_user.id) not in ast.literal_eval(resource[3]):
@@ -128,9 +129,9 @@ async def show_subscribe(msg: types.Message, state: FSMContext) -> None:
     if resources_list:
         resources_list = get_resources_list(resources_list)
         await msg.answer(f"Вы одписаны на следующие ресурсы:{resources_list}"
-                         , parse_mode='HTML', reply_markup=kb.user_kb())
+                         , parse_mode='HTML', reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
     else:
-        await msg.answer("Вы подписаны на все возможные ресурсы!", reply_markup=kb.user_kb())
+        await msg.answer("Нет подписок!", reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
     await msg.delete()
 
 

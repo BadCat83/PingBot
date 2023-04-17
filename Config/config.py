@@ -2,6 +2,7 @@ from pydantic import BaseSettings, SecretStr, BaseModel
 from ipaddress import IPv4Address
 
 BLOCKING_TIME = 1
+TIMEOUT = 5
 
 
 class Settings(BaseSettings):

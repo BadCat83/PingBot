@@ -36,6 +36,14 @@ async def get_resources() -> list:
     return cur.execute("SELECT * FROM resources").fetchall()
 
 
+async def get_resources_ip() -> list:
+    return cur.execute("SELECT ip_address FROM resources").fetchall()
+
+
+async def get_resource_by_ip(ip: str) -> list:
+    return cur.execute("SELECT resource_name FROM resources WHERE ip_address = ?", (ip,)).fetchone()[0]
+
+
 async def get_resource_users(resource_ip: str) -> list:
     return json.loads(cur.execute("SELECT users_list FROM resources"
                                   " WHERE ip_address = ?", (resource_ip,)).fetchone()[0])
