@@ -67,7 +67,7 @@ async def create_resource(new_resource: Resource) -> sq.Cursor:
     return resource
 
 
-async def add_users_to_res(users_id: list, ip_address: str) -> None:
+async def update_res_users(users_id: list, ip_address: str) -> None:
     cur.execute("UPDATE resources SET users_list = ? WHERE ip_address = ?", (json.dumps(users_id), ip_address))
     db.commit()
 

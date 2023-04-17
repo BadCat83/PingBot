@@ -2,9 +2,8 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 
 from Config.config import Resource
-from FSM.states import ResourceStates, EditResourceStates, AdminState
-from Keyboards.keyboards import choose_users_kb
-from Utils.func import create_new_user, get_users, add_user, exit_func
+from FSM.states import ResourceStates, EditResourceStates, AdminState, UnsubscribeState
+from Utils.func import create_new_user, get_users, add_user, exit_func, get_resources_list
 from init_bot import dp, bot, db
 import Keyboards.keyboards as kb
 import ast
@@ -50,6 +49,23 @@ async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None
         await add_user(callback, state)
 
 
+async def unsubscribe(callback: types.CallbackQuery, state: FSMContext) -> None:
+    if callback.data == 'exit':
+        is_admin = 'admin' in (await state.get_state())
+        await exit_func(callback, state)
+        return await AdminState.admin.set() if is_admin else await AdminState.user.set()
+    else:
+        ip, name, *id_list = callback.data.split(',')
+        for index, elem in enumerate(id_list):
+            id_list[index] = "".join(filter(str.isdecimal, elem))
+        id_list.remove(str(callback.from_user.id))
+        await db.update_res_users(id_list, ip)
+        await callback.message.answer(f"Вы отписались от мониторинга ресурса {name}!",
+                                      reply_markup=kb.unsubscribe_kb(await get_resources_list(callback.from_user.id)))
+        await callback.answer()
+        await callback.message.delete()
+
+
 async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext) -> None:
     if callback.data == 'exit':
         await exit_func(callback, state)
@@ -57,7 +73,7 @@ async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext
     elif callback.data == 'save_subscribe':
         async with state.proxy() as data:
             for resource in data['resources']:
-                await db.add_users_to_res(resource[1], resource[0])
+                await db.update_res_users(resource[1], resource[0])
             await callback.answer("Вы успешно подписались на выбранные ресурсы!")
             await callback.message.delete()
             await state.finish()
@@ -74,7 +90,7 @@ async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext
                     break
             await callback.message.delete()
             await callback.message.answer('Выберите ресурс на который хотите подписаться',
-                                          reply_markup=await kb.add_users_to_res_kb(data['resources_list']))
+                                          reply_markup=kb.add_users_to_res_kb(data['resources_list']))
         await callback.answer()
 
 
@@ -91,7 +107,7 @@ async def choose_resource(callback: types.CallbackQuery, state: FSMContext) -> N
     else:
         await callback.message.delete()
         await callback.message.answer("Добавьте нужных пользователей в список.",
-                                      reply_markup=await kb.choose_users_kb(data["users_list"]))
+                                      reply_markup=kb.choose_users_kb(data["users_list"]))
         await EditResourceStates.next()
         await callback.answer("Ресурс выбран, добавьте пользователей!")
 
@@ -101,7 +117,7 @@ async def add_user_to_res(callback: types.CallbackQuery, state: FSMContext) -> N
         async with state.proxy() as data:
             if 'users_id' in data.keys():
                 try:
-                    await db.add_users_to_res(data['users_id'] + data["current_users"], data['resource_ip'])
+                    await db.update_res_users(data['users_id'] + data["current_users"], data['resource_ip'])
                 except Exception as e:
                     await callback.message.answer(
                         f"При добавлении пользователя возникла следующая ошибка - {e}. Попробуйте еще раз!",
@@ -131,5 +147,7 @@ def register_callback_handlers(dispatcher: Dispatcher):
     dispatcher.register_callback_query_handler(add_resource, state=ResourceStates.add_users)
     dispatcher.register_callback_query_handler(choose_resource, state=EditResourceStates.add_user)
     dispatcher.register_callback_query_handler(subscribe_to_resource, state=AdminState.user)
+    dispatcher.register_callback_query_handler(unsubscribe, state=[AdminState.admin, AdminState.user,
+                                                                   UnsubscribeState.unsubscribe])
     dispatcher.register_callback_query_handler(add_user_to_res, state=EditResourceStates.finish)
     dispatcher.register_callback_query_handler(cancel_query, text='cancel_query', state=AdminState.admin)

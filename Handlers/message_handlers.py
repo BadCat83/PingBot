@@ -4,10 +4,10 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 
 from Config.config import User
-from FSM.states import ResourceStates, EditResourceStates, AdminState
+from FSM.states import ResourceStates, EditResourceStates, AdminState, UnsubscribeState
 import Keyboards.keyboards as kb
-from Utils.formating import get_resources_list
-from Utils.func import get_users
+from Utils.formating import format_resources_list
+from Utils.func import get_users, get_resources_list
 from init_bot import bot, db
 import ipaddress
 
@@ -51,7 +51,8 @@ async def help_cmd(msg: types.Message, state: FSMContext):
            f"пустой базе становится адимнистратором.\n" \
            f"{'<b>/add_resource</b> - Добавить ресурс.' if is_admin else '<b>/subscribe_to_resource</b> - Подписаться на ресурс.'}\n" \
            f"{'<b>/add_user_to_resource</b> - Добавить пользователя к мониторингу ресурса' if is_admin else ''}\n" \
-           f"<b>/show_subscribe</b> - Показать подписки"
+           f"<b>/show_subscribe</b> - Показать подписки" \
+           f"<b>/unsubscribe</b> - Отписаться"
     await msg.answer(text, parse_mode='HTML')
     await msg.delete()
 
@@ -65,7 +66,7 @@ async def cancel_cmd(msg: types.Message, state: FSMContext) -> None:
 
 async def add_user_to_resource(msg: types.Message) -> None:
     await msg.answer("Выберите ресурс к которому необходимо добавить пользователя",
-                     reply_markup=await kb.add_users_to_res_kb(await db.get_resources()), )
+                     reply_markup=kb.add_users_to_res_kb(await db.get_resources()), )
     await msg.delete()
     await EditResourceStates.add_user.set()
 
@@ -100,11 +101,11 @@ async def add_describe(msg: types.Message, state: FSMContext) -> None:
         data['describe'] = msg.text
         data['users_list'] = await get_users()
     await msg.answer("А теперь добавьте пользователей которым необходимо слать оповещение при недосутупности ресурса",
-                     reply_markup=await kb.choose_users_kb(data['users_list']))
+                     reply_markup=kb.choose_users_kb(data['users_list']))
     await ResourceStates.next()
 
 
-async def choose_resource(msg: types.Message, state: FSMContext) -> None:
+async def subscribe(msg: types.Message, state: FSMContext) -> None:
     resources = await db.get_resources()
     for resource in resources.copy():
         if resource[3][1:-1] and str(msg.from_user.id) in resource[3]:
@@ -116,19 +117,27 @@ async def choose_resource(msg: types.Message, state: FSMContext) -> None:
             data['resources'] = []
             data['resources_list'] = resources
         await msg.answer("Выберите ресурс на который хотите подписаться",
-                         reply_markup=await kb.add_users_to_res_kb(resources, first_time_use=True), )
+                         reply_markup=kb.add_users_to_res_kb(resources, first_time_use=True), )
     await msg.delete()
 
-async def show_subscribe(msg: types.Message, state: FSMContext) -> None:
-    resources_list = await db.get_resources()
-    is_admin = 'admin' in (await state.get_state())
 
-    for resource in resources_list.copy():
-        if str(msg.from_user.id) not in ast.literal_eval(resource[3]):
-            resources_list.remove(resource)
+async def unsubscribe(msg: types.Message, state: FSMContext) -> None:
+    resources_list = await get_resources_list(msg.from_user.id)
+    is_admin = 'admin' in (await state.get_state())
     if resources_list:
-        resources_list = get_resources_list(resources_list)
-        await msg.answer(f"Вы одписаны на следующие ресурсы:{resources_list}"
+        await UnsubscribeState.unsubscribe.set()
+        await msg.answer(f"От какого ресурса Вы хотите отписаться?:{format_resources_list(resources_list)}"
+                         , parse_mode='HTML', reply_markup=kb.unsubscribe_kb(resources_list))
+    else:
+        await msg.answer("Нет подписок!", reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
+    await msg.delete()
+
+
+async def show_subscribe(msg: types.Message, state: FSMContext) -> None:
+    resources_list = await get_resources_list(msg.from_user.id)
+    is_admin = 'admin' in (await state.get_state())
+    if resources_list:
+        await msg.answer(f"Вы подписаны на следующие ресурсы:{format_resources_list(resources_list)}"
                          , parse_mode='HTML', reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
     else:
         await msg.answer("Нет подписок!", reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
@@ -143,8 +152,10 @@ def register_message_handlers(dp: Dispatcher):
     dp.register_message_handler(start_cmd, commands=['start', ], state='*')
     dp.register_message_handler(help_cmd, commands=['help', ], state=[AdminState.admin, AdminState.user])
     dp.register_message_handler(add_resource, commands=['add_resource', ], state=AdminState.admin)
-    dp.register_message_handler(choose_resource, commands=['choose_resources', ], state=AdminState.user)
+    dp.register_message_handler(subscribe, commands=['subscribe', ], state=AdminState.user)
     dp.register_message_handler(show_subscribe, commands=['show_subscribe', ],
+                                state=[AdminState.admin, AdminState.user])
+    dp.register_message_handler(unsubscribe, commands=['unsubscribe', ],
                                 state=[AdminState.admin, AdminState.user])
     dp.register_message_handler(add_user_to_resource, commands=['add_user_to_resource', ], state=AdminState.admin)
     dp.register_message_handler(cancel_cmd, commands=['cancel'], state='*')

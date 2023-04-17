@@ -13,14 +13,24 @@ def user_add_kb() -> InlineKeyboardMarkup:
                          [InlineKeyboardButton('Отклонить запрос', callback_data='cancel_query')]])
 
 
-async def choose_users_kb(users_list: list) -> InlineKeyboardMarkup:
+def choose_users_kb(users_list: list) -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(f"{user[2]}", callback_data=f'add_user_{user[0]}')] for user in users_list
     ])
     return kb.add(InlineKeyboardButton("Сохранить...", callback_data='save'))
 
 
-async def add_users_to_res_kb(resources_list: list, first_time_use: bool = False) -> InlineKeyboardMarkup:
+def unsubscribe_kb(resources_list: list) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardMarkup(row_width=3)
+    if resources_list:
+        for resource in resources_list:
+            kb.insert(
+                InlineKeyboardButton(f"{resource[1]}", callback_data=f'{resource[0]},{resource[1]},{resource[3]}')
+            )
+        return kb.add(InlineKeyboardButton("Выйти", callback_data='exit'))
+
+
+def add_users_to_res_kb(resources_list: list, first_time_use: bool = False) -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(row_width=3)
     if resources_list:
         for resource in resources_list:
@@ -35,13 +45,15 @@ def admin_kb():
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton('/add_resource')],
         [KeyboardButton('/add_user_to_resource')],
-        [KeyboardButton('/show_subscribe')]
+        [KeyboardButton('/show_subscribe')],
+        [KeyboardButton('/unsubscribe')]
     ], resize_keyboard=True, one_time_keyboard=True)
 
 
 def user_kb():
-    return ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/choose_resources')],
-                                         [KeyboardButton('/show_subscribe')]],
+    return ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/subscribe')],
+                                         [KeyboardButton('/show_subscribe')],
+                                         [KeyboardButton('/unsubscribe')]],
                                resize_keyboard=True,
                                one_time_keyboard=True)
 

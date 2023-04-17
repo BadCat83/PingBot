@@ -11,6 +11,10 @@ class AdminState(StatesGroup):
     user = State()
 
 
+class UnsubscribeState(StatesGroup):
+    unsubscribe = State()
+
+
 class ResourceStates(StatesGroup):
     resource_name = State()
     ip_address = State()
