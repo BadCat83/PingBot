@@ -4,7 +4,7 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 
 from Config.config import User
-from FSM.states import ResourceStates, EditResourceStates, AdminState, UnsubscribeState
+from FSM.states import ResourceStates, EditResourceStates, AdminState, SubscribeState
 import Keyboards.keyboards as kb
 from Utils.formating import format_resources_list
 from Utils.func import get_users, get_resources_list, show_subscribes
@@ -118,6 +118,7 @@ async def subscribe(msg: types.Message, state: FSMContext) -> None:
             data['resources_list'] = resources
         await msg.answer("Выберите ресурс на который хотите подписаться",
                          reply_markup=kb.add_users_to_res_kb(resources, first_time_use=True), )
+        await SubscribeState.subscribe.set()
     await msg.delete()
 
 
@@ -125,7 +126,6 @@ async def unsubscribe(msg: types.Message, state: FSMContext) -> None:
     resources_list = await get_resources_list(msg.from_user.id)
     is_admin = 'admin' in (await state.get_state())
     if resources_list:
-        await UnsubscribeState.unsubscribe.set()
         await msg.answer(f"От какого ресурса Вы хотите отписаться?:{format_resources_list(resources_list)}"
                          , parse_mode='HTML', reply_markup=kb.unsubscribe_kb(resources_list))
     else:

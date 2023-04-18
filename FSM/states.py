@@ -11,8 +11,8 @@ class AdminState(StatesGroup):
     user = State()
 
 
-class UnsubscribeState(StatesGroup):
-    unsubscribe = State()
+class SubscribeState(StatesGroup):
+    subscribe = State()
 
 
 class ResourceStates(StatesGroup):

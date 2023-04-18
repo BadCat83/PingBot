@@ -95,9 +95,8 @@ async def get_resources_list(user_id: int) -> list:
     return resources_list
 
 async def show_subscribes(msg: types.Message, state: FSMContext) -> None:
-    resources_list = await get_resources_list(msg.from_user.id)
+    resources_list = await get_resources_list(msg.chat.id)
     is_admin = 'admin' in (await state.get_state())
-    print(f'{is_admin} in func')
     if resources_list:
         await msg.answer(f"Вы подписаны на следующие ресурсы:{format_resources_list(resources_list)}"
                          , parse_mode='HTML', reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
