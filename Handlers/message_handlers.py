@@ -7,7 +7,7 @@ from Config.config import User
 from FSM.states import ResourceStates, EditResourceStates, AdminState, UnsubscribeState
 import Keyboards.keyboards as kb
 from Utils.formating import format_resources_list
-from Utils.func import get_users, get_resources_list
+from Utils.func import get_users, get_resources_list, show_subscribes
 from init_bot import bot, db
 import ipaddress
 
@@ -134,13 +134,14 @@ async def unsubscribe(msg: types.Message, state: FSMContext) -> None:
 
 
 async def show_subscribe(msg: types.Message, state: FSMContext) -> None:
-    resources_list = await get_resources_list(msg.from_user.id)
-    is_admin = 'admin' in (await state.get_state())
-    if resources_list:
-        await msg.answer(f"Вы подписаны на следующие ресурсы:{format_resources_list(resources_list)}"
-                         , parse_mode='HTML', reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
-    else:
-        await msg.answer("Нет подписок!", reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
+    await show_subscribes(msg, state)
+    # resources_list = await get_resources_list(msg.from_user.id)
+    # is_admin = 'admin' in (await state.get_state())
+    # if resources_list:
+    #     await msg.answer(f"Вы подписаны на следующие ресурсы:{format_resources_list(resources_list)}"
+    #                      , parse_mode='HTML', reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
+    # else:
+    #     await msg.answer("Нет подписок!", reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
     await msg.delete()
 
 

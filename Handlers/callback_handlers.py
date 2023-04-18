@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 
 from Config.config import Resource
 from FSM.states import ResourceStates, EditResourceStates, AdminState, UnsubscribeState
-from Utils.func import create_new_user, get_users, add_user, exit_func, get_resources_list
+from Utils.func import create_new_user, get_users, add_user, exit_func, get_resources_list, show_subscribes
 from init_bot import dp, bot, db
 import Keyboards.keyboards as kb
 import ast
@@ -51,9 +51,13 @@ async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None
 
 async def unsubscribe(callback: types.CallbackQuery, state: FSMContext) -> None:
     if callback.data == 'exit':
+        async with state.proxy() as data:
+            print(data)
         is_admin = 'admin' in (await state.get_state())
+        print(f'{is_admin} in unsubscribe')
         await exit_func(callback, state)
-        return await AdminState.admin.set() if is_admin else await AdminState.user.set()
+        await AdminState.admin.set() if is_admin else await AdminState.user.set()
+        return await show_subscribes(callback.message, state)
     else:
         ip, name, *id_list = callback.data.split(',')
         for index, elem in enumerate(id_list):

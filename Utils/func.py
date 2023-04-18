@@ -3,8 +3,10 @@ import ast
 from aiogram import types, Bot, Dispatcher
 from aiogram.dispatcher import FSMContext
 from DB.sqlite import create_user, check_users_exist, get_resource_users, get_resources
-from FSM.states import UserStates, AdminState
+from FSM.states import AdminState
 from Keyboards.keyboards import admin_kb, choose_users_kb
+from Utils.formating import format_resources_list
+import Keyboards.keyboards as kb
 
 
 def return_user_data(user: types.User) -> tuple:
@@ -91,3 +93,13 @@ async def get_resources_list(user_id: int) -> list:
         if str(user_id) not in ast.literal_eval(resource[3]):
             resources_list.remove(resource)
     return resources_list
+
+async def show_subscribes(msg: types.Message, state: FSMContext) -> None:
+    resources_list = await get_resources_list(msg.from_user.id)
+    is_admin = 'admin' in (await state.get_state())
+    print(f'{is_admin} in func')
+    if resources_list:
+        await msg.answer(f"Вы подписаны на следующие ресурсы:{format_resources_list(resources_list)}"
+                         , parse_mode='HTML', reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
+    else:
+        await msg.answer("Нет подписок!", reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
