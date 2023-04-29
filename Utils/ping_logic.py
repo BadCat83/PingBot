@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 
 import aioping
 
-from Config.config import TIMEOUT
+from Config.config import TIMEOUT, PING_TIMEOUT
 from Utils.formating import time_format
-from init_bot import db, dp
+from init_bot import db, dp, resources_storage
 
 
 async def send_message_to_users(resource_ip: str, text: str) -> None:
@@ -18,17 +18,24 @@ async def send_message_to_users(resource_ip: str, text: str) -> None:
 async def do_ping() -> None:
     await asyncio.sleep(TIMEOUT)
     resources = await db.get_resources_ip()
-    available = {resource[0]: [True, None] for resource in resources}
+    resources_storage.flushdb()
+    _ = [resources_storage.lpush('res', resource[0]) for resource in resources]
+
     while True:
+        available = {resource: [True, None, 0] for resource in resources_storage.lrange('res', 0, -1)}
         for ip, param in available.items():
             if param[0]:
                 try:
-                    await aioping.ping(ip) * 1000
-                    # await asyncio.sleep(1)
+                    delay = await aioping.ping(ip, timeout=5) * 1000
+                    available[ip][2] = 0
+                    print(f'{ip}:{delay}')
                 except TimeoutError:
-                    available[ip][0] = False
-                    available[ip][1] = datetime.now()
-                    await send_message_to_users(ip, 'недоступен')
+                    available[ip][2] += 1
+                    print(available[ip][2])
+                    if available[ip][2] > 2:
+                        available[ip][1] = datetime.now()
+                        available[ip][0] = False
+                        await send_message_to_users(ip, 'недоступен')
             elif (datetime.now() - available[ip][1]) > timedelta(minutes=15):
                 available[ip][0] = True
             else:
@@ -42,8 +49,9 @@ async def do_ping() -> None:
                     await send_message_to_users(ip, f'доступен. Ресурс был недоступен - '
                                                     f'{hours}h:{minutes}m:{seconds}s')
                     available[ip][0] = True
+                    available[ip][2] = 0
 
-        await asyncio.sleep(TIMEOUT)
+        await asyncio.sleep(PING_TIMEOUT)
 
 
 if __name__ == '__main__':
