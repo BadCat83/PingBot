@@ -4,7 +4,7 @@ from aiogram.dispatcher import FSMContext
 from Config.config import Resource
 from FSM.states import ResourceStates, EditResourceStates, AdminState, SubscribeState
 from Utils.func import create_new_user, get_users, add_user, exit_func, get_resources_list, show_subscribes
-from init_bot import dp, bot, db
+from init_bot import dp, bot, db, resources_storage
 import Keyboards.keyboards as kb
 import ast
 
@@ -44,6 +44,7 @@ async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None
                     f"При создании ресурса возникла следующая ошибка - {e}. Попробуйте еще раз!",
                     reply_markup=kb.admin_kb())
             else:
+                resources_storage.lpush('res', str(resource.ip_address))
                 await callback.message.answer(f"Ресурс {data['resource_name']} "
                                               f"с ip адресом {data['ip_address']} успешно создан",
                                               reply_markup=kb.admin_kb())
