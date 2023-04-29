@@ -44,6 +44,7 @@ async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None
                     f"При создании ресурса возникла следующая ошибка - {e}. Попробуйте еще раз!",
                     reply_markup=kb.admin_kb())
             else:
+                # Adding the resource to monitoring
                 resources_storage.lpush('res', str(resource.ip_address))
                 await callback.message.answer(f"Ресурс {data['resource_name']} "
                                               f"с ip адресом {data['ip_address']} успешно создан",
