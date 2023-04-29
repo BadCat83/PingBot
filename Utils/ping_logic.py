@@ -20,36 +20,42 @@ async def do_ping() -> None:
     resources = await db.get_resources_ip()
     resources_storage.flushdb()
     _ = [resources_storage.lpush('res', resource[0]) for resource in resources]
-
+    res_list = {resource: {'avail': 1, 'dt': ' ', 'cnt': 0} for resource in resources_storage.lrange('res', 0, -1)}
+    for key, val in res_list.items():
+        resources_storage.hmset(key, val)
+    dt = None
     while True:
-        available = {resource: [True, None, 0] for resource in resources_storage.lrange('res', 0, -1)}
-        for ip, param in available.items():
-            if param[0]:
+        for ip in res_list:
+            if (resources_storage.hget(ip, 'dt') != ' ') and not dt:
+                dt = datetime.fromtimestamp(int(resources_storage.hget(ip, 'dt')))
+            if resources_storage.hget(ip, 'avail') != '0':
                 try:
                     delay = await aioping.ping(ip, timeout=5) * 1000
-                    available[ip][2] = 0
-                    print(f'{ip}:{delay}')
+                    resources_storage.hset(ip, 'cnt', 0)
+                    # print(f'{ip}:{delay}')
                 except TimeoutError:
-                    available[ip][2] += 1
-                    print(available[ip][2])
-                    if available[ip][2] > 2:
-                        available[ip][1] = datetime.now()
-                        available[ip][0] = False
+                    resources_storage.hset(ip, 'cnt', int(resources_storage.hget(ip, 'cnt')) + 1)
+                    if int(resources_storage.hget(ip, 'cnt')) > 1:
+                        resources_storage.hset(ip, 'dt', int(datetime.now().timestamp()))
+                        resources_storage.hset(ip, 'avail', 0)
                         await send_message_to_users(ip, 'недоступен')
-            elif (datetime.now() - available[ip][1]) > timedelta(minutes=15):
-                available[ip][0] = True
+            elif (datetime.now() - datetime.fromtimestamp(int(resources_storage.hget(ip, 'dt')))) > timedelta(minutes=1):
+                await send_message_to_users(ip, 'все еще недоступен')
+                resources_storage.hset(ip, 'dt', int(datetime.now().timestamp()))
             else:
                 try:
                     await aioping.ping(ip) * 1000
                 except TimeoutError:
                     continue
                 else:
-                    delta = datetime.now() - available[ip][1]
+                    delta = datetime.now() - dt
                     hours, minutes, seconds = time_format(delta)
                     await send_message_to_users(ip, f'доступен. Ресурс был недоступен - '
                                                     f'{hours}h:{minutes}m:{seconds}s')
-                    available[ip][0] = True
-                    available[ip][2] = 0
+                    resources_storage.hset(ip, 'avail', 1)
+                    resources_storage.hset(ip, 'cnt', 0)
+                    resources_storage.hset(ip, 'dt', ' ')
+                    dt = None
 
         await asyncio.sleep(PING_TIMEOUT)
 
