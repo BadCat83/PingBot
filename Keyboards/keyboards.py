@@ -7,6 +7,7 @@ users_cb = CallbackData('user', 'action')
 
 
 def user_add_kb() -> InlineKeyboardMarkup:
+    """Keyboard for the initial user adding, available for admins"""
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton('Добавить в качестве пользователя',
                                                callback_data='add_as_user')],
@@ -16,6 +17,7 @@ def user_add_kb() -> InlineKeyboardMarkup:
 
 
 def choose_users_kb(users_list: list) -> InlineKeyboardMarkup:
+    """Keyboard for choosing user for adding to the resource"""
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(f"{user[2]}", callback_data=f'add_user_{user[0]}')] for user in users_list
     ])
@@ -23,6 +25,7 @@ def choose_users_kb(users_list: list) -> InlineKeyboardMarkup:
 
 
 def unsubscribe_kb(resources_list: list) -> InlineKeyboardMarkup:
+    """Keyboard for resource unsubscribe"""
     kb = InlineKeyboardMarkup(row_width=3)
     if resources_list:
         for resource in resources_list:
@@ -33,6 +36,7 @@ def unsubscribe_kb(resources_list: list) -> InlineKeyboardMarkup:
 
 
 def add_users_to_res_kb(resources_list: list, first_time_use: bool = False) -> InlineKeyboardMarkup:
+    """Keyboard for adding users to resource by admins"""
     kb = InlineKeyboardMarkup(row_width=3)
     if resources_list:
         for resource in resources_list:
@@ -44,6 +48,7 @@ def add_users_to_res_kb(resources_list: list, first_time_use: bool = False) -> I
 
 
 def admin_kb():
+    """Keyboard for admins"""
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton('/add_resource')],
         [KeyboardButton('/add_user_to_resource')],
@@ -53,6 +58,7 @@ def admin_kb():
 
 
 def user_kb():
+    """Keyboard for users"""
     return ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/subscribe')],
                                          [KeyboardButton('/show_subscribe')],
                                          [KeyboardButton('/unsubscribe')]],
@@ -61,4 +67,5 @@ def user_kb():
 
 
 def cancel_kb() -> ReplyKeyboardMarkup:
+    """Cancel action"""
     return ReplyKeyboardMarkup(keyboard=[[KeyboardButton('/cancel')]], resize_keyboard=True)
