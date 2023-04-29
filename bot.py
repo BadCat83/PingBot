@@ -25,11 +25,5 @@ def bot_start() -> None:
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
 
 
-    # dp.middleware.setup(ThrottlingMiddleware())
-    # loop = asyncio.get_event_loop()
-    # loop.create_task(do_ping('ya.ru'))
-    # loop.create_task(executor.start_polling(dp, skip_updates=True, on_startup=on_startup))
-
-
 if __name__ == '__main__':
     bot_start()
