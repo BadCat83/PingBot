@@ -1,6 +1,8 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.callback_data import CallbackData
 
+"""Reply and Inline keyboards"""
+
 users_cb = CallbackData('user', 'action')
 
 

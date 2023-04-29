@@ -10,7 +10,11 @@ from init_bot import bot, db
 import ipaddress
 
 
+"""Message handlers"""
+
 async def start_cmd(msg: types.Message, state: FSMContext) -> None:
+    """Handles the start command"""
+    # The first user who starts the bot, will become an admin
     if not await db.check_users_exist():
         admin = User(user_id=msg.from_user.id,
                      nick=msg.from_user.username,
@@ -20,6 +24,7 @@ async def start_cmd(msg: types.Message, state: FSMContext) -> None:
         await msg.answer("Теперь Вы являетесь основным администратором данного бота", reply_markup=kb.admin_kb())
         await msg.delete()
         await AdminState.admin.set()
+    # Requesting for approve if user is not authorized
     elif not bool(is_administrator := await db.check_user(msg.from_user.id)):
         await msg.answer("Пожалуйста, подождите пока ваш профиль одобрит администратор.")
         await msg.delete()
@@ -34,6 +39,7 @@ async def start_cmd(msg: types.Message, state: FSMContext) -> None:
             await bot.send_message(user_id, f'Пользователь {msg.from_user.full_name} ждет Вашего утверждения.\n'
                                             f'ID пользователя: "{msg.from_user.id}"\n',
                                    reply_markup=kb.user_add_kb())
+    # Showing keyboard for the user depending on their rights
     else:
         await msg.answer(f"Вы авторизованы в системе в качестве"
                          f" {'администратора' if is_administrator[0] else 'пользователя'}, можете продолжать работу",
@@ -42,6 +48,7 @@ async def start_cmd(msg: types.Message, state: FSMContext) -> None:
 
 
 async def help_cmd(msg: types.Message, state: FSMContext):
+    """Handles the help command"""
     is_admin = 'admin' in (await state.get_state())
     text = f"Данный бот позволяет пинговать заданные администратором ресурсы и слать оповещения подписавшимся" \
            f" на ресурс пользователям оповещения в случае недоступности ресурса.\n<b>/help</b> - Вывести помощь" \
@@ -56,6 +63,7 @@ async def help_cmd(msg: types.Message, state: FSMContext):
 
 
 async def cancel_cmd(msg: types.Message, state: FSMContext) -> None:
+    """Handles the cancel command"""
     await state.finish()
     await AdminState.admin.set()
     await msg.answer("Вы отменили действие", reply_markup=kb.admin_kb())
@@ -63,6 +71,7 @@ async def cancel_cmd(msg: types.Message, state: FSMContext) -> None:
 
 
 async def add_user_to_resource(msg: types.Message) -> None:
+    """Handles the add_user_to_resource command"""
     await msg.answer("Выберите ресурс к которому необходимо добавить пользователя",
                      reply_markup=kb.add_users_to_res_kb(await db.get_resources()), )
     await msg.delete()
@@ -70,12 +79,14 @@ async def add_user_to_resource(msg: types.Message) -> None:
 
 
 async def add_resource(msg: types.Message) -> None:
+    """Handles the resource adding"""
     await msg.answer("Добавьте имя нового ресурса", reply_markup=kb.cancel_kb())
     await msg.delete()
     await ResourceStates.resource_name.set()
 
 
 async def add_resource_name(msg: types.Message, state: FSMContext) -> None:
+    """Handles the resource name entering"""
     async with state.proxy() as data:
         data['resource_name'] = msg.text
         await msg.reply(f"Какой IP адрес у {data['resource_name']}?")
@@ -83,6 +94,7 @@ async def add_resource_name(msg: types.Message, state: FSMContext) -> None:
 
 
 async def add_ip_address(msg: types.Message, state: FSMContext) -> None:
+    """Handles the ip_address entering """
     try:
         ip = ipaddress.ip_address(msg.text)
     except ValueError:
@@ -95,6 +107,7 @@ async def add_ip_address(msg: types.Message, state: FSMContext) -> None:
 
 
 async def add_describe(msg: types.Message, state: FSMContext) -> None:
+    """Handles the describe entering"""
     async with state.proxy() as data:
         data['describe'] = msg.text
         data['users_list'] = await get_users()
@@ -104,6 +117,7 @@ async def add_describe(msg: types.Message, state: FSMContext) -> None:
 
 
 async def subscribe(msg: types.Message, state: FSMContext) -> None:
+    """Handles subscribe logic"""
     resources = await db.get_resources()
     for resource in resources.copy():
         if resource[3][1:-1] and str(msg.from_user.id) in resource[3]:
@@ -121,6 +135,7 @@ async def subscribe(msg: types.Message, state: FSMContext) -> None:
 
 
 async def unsubscribe(msg: types.Message, state: FSMContext) -> None:
+    """Handles unsubscribe logic"""
     resources_list = await get_resources_list(msg.from_user.id)
     is_admin = 'admin' in (await state.get_state())
     if resources_list:
@@ -132,18 +147,13 @@ async def unsubscribe(msg: types.Message, state: FSMContext) -> None:
 
 
 async def show_subscribe(msg: types.Message, state: FSMContext) -> None:
+    """Handles the show subscribe command"""
     await show_subscribes(msg, state)
-    # resources_list = await get_resources_list(msg.from_user.id)
-    # is_admin = 'admin' in (await state.get_state())
-    # if resources_list:
-    #     await msg.answer(f"Вы подписаны на следующие ресурсы:{format_resources_list(resources_list)}"
-    #                      , parse_mode='HTML', reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
-    # else:
-    #     await msg.answer("Нет подписок!", reply_markup=kb.admin_kb() if is_admin else kb.user_kb())
     await msg.delete()
 
 
 async def send_echo(msg: types.Message) -> None:
+    """Test handler"""
     await msg.answer(msg.text)
 
 

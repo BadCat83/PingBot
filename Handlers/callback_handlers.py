@@ -8,20 +8,27 @@ from init_bot import dp, bot, db
 import Keyboards.keyboards as kb
 import ast
 
+"""Callback handlers"""
+
 
 async def add_new_user(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Handles the create new user command"""
     await create_new_user(callback, bot, state, dp)
 
 
 async def add_new_admin(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Handles the create new user command as an admin"""
     await create_new_user(callback, bot, state, dp, is_administrator=True)
 
 
 async def cancel_query(callback: types.CallbackQuery):
+    """Cancels any action"""
     await create_new_user(callback, bot)
 
 
 async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Handles the create new resource command"""
+    # Creating a new resource with adding new users to it with a kind of loop
     if callback.data == 'save':
         async with state.proxy() as data:
             resource = Resource(
@@ -46,10 +53,13 @@ async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None
                 await state.finish()
                 await AdminState.admin.set()
     else:
+        # While the save button won't be pressed, adding a new user to the created resource
         await add_user(callback, state)
 
 
 async def unsubscribe(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Handles the unsubscribe command"""
+    # While the exit button won't be pressed, continuing to unsubscribe of the resources
     if callback.data == 'exit':
         is_admin = 'admin' in (await state.get_state())
         await exit_func(callback, state)
@@ -68,9 +78,12 @@ async def unsubscribe(callback: types.CallbackQuery, state: FSMContext) -> None:
 
 
 async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Handles the subscribe command"""
+    # Stopping to subscribe handling and resetting to subscribe state
     if callback.data == 'exit':
         await exit_func(callback, state)
         return await AdminState.user.set()
+    # Subscribing to the selected resource
     elif callback.data == 'save_subscribe':
         async with state.proxy() as data:
             for resource in data['resources']:
@@ -79,6 +92,7 @@ async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext
             await callback.message.delete()
             await state.finish()
             await AdminState.user.set()
+    # Adding resources to the list of the subscribes
     else:
         resource_id, _, users_id = callback.data.split(',')
         users_id = ast.literal_eval(users_id)
@@ -96,6 +110,7 @@ async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext
 
 
 async def choose_resource(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Handles the adding_user_to_resource command. This handler is allowed only for users with the admin rights"""
     if callback.data == 'exit':
         await exit_func(callback, state)
         return await AdminState.admin.set()
@@ -114,6 +129,7 @@ async def choose_resource(callback: types.CallbackQuery, state: FSMContext) -> N
 
 
 async def add_user_to_res(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Handles adding users to the resource after creating the resource by admin"""
     if callback.data == 'save':
         async with state.proxy() as data:
             if 'users_id' in data.keys():
@@ -131,8 +147,6 @@ async def add_user_to_res(callback: types.CallbackQuery, state: FSMContext) -> N
                     await callback.message.delete()
                     await callback.answer(
                         f"Все назначенные пользователи теперь мониторят ресурс {data['resource_name']}!")
-                    # await state.finish()
-                    # await AdminState.admin.set()
             else:
                 await callback.message.delete()
                 await callback.message.answer("Вы не выбрали ни одного пользователя!", reply_markup=kb.admin_kb())
