@@ -30,7 +30,7 @@ def unsubscribe_kb(resources_list: list) -> InlineKeyboardMarkup:
     if resources_list:
         for resource in resources_list:
             kb.insert(
-                InlineKeyboardButton(f"{resource[1]}", callback_data=f'{resource[0]},{resource[1]},{resource[3]}')
+                InlineKeyboardButton(f"{resource[1]}", callback_data=f'{resource[0]}|{resource[1]}|{resource[3]}')
             )
         return kb.add(InlineKeyboardButton("Выйти", callback_data='exit'))
 
@@ -40,8 +40,9 @@ def add_users_to_res_kb(resources_list: list, first_time_use: bool = False) -> I
     kb = InlineKeyboardMarkup(row_width=3)
     if resources_list:
         for resource in resources_list:
+            print(resource)
             kb.insert(
-                InlineKeyboardButton(f"{resource[1]}", callback_data=f'{resource[0]},{resource[1]},{resource[3]}'))
+                InlineKeyboardButton(f"{resource[1]}", callback_data=f'{resource[0]}|{resource[1]}|{resource[3]}'))
     if not first_time_use:
         kb.add(InlineKeyboardButton("Сохранить", callback_data='save_subscribe'))
     return kb.add(InlineKeyboardButton("Выйти", callback_data='exit'))
