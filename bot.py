@@ -8,8 +8,11 @@ from init_bot import dp, db
 
 from Handlers import callback_handlers, message_handlers
 
+"""Start functions"""
+
 
 async def on_startup(_):
+    """Initializes database and authorizes users"""
     await db.db_start()
     await authorization_on_startup(dp)
 
@@ -19,6 +22,7 @@ message_handlers.register_message_handlers(dp)
 
 
 def bot_start() -> None:
+    """Setups anti-spam middleware, creates ping task and starts the bot"""
     dp.middleware.setup(ThrottlingMiddleware())
     loop = asyncio.get_event_loop()
     loop.create_task(do_ping())
