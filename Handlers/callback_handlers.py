@@ -46,6 +46,7 @@ async def add_resource(callback: types.CallbackQuery, state: FSMContext) -> None
             else:
                 # Adding the resource to monitoring
                 resources_storage.lpush('res', str(resource.ip_address))
+                resources_storage.hmset(str(resource.ip_address), {'avail': 1, 'dt': ' ', 'cnt': 0})
                 await callback.message.answer(f"Ресурс {data['resource_name']} "
                                               f"с ip адресом {data['ip_address']} успешно создан",
                                               reply_markup=kb.admin_kb())
@@ -68,7 +69,7 @@ async def unsubscribe(callback: types.CallbackQuery, state: FSMContext) -> None:
         await AdminState.admin.set() if is_admin else await AdminState.user.set()
         return await show_subscribes(callback.message, state)
     else:
-        ip, name, *id_list = callback.data.split(',')
+        ip, name, *id_list = callback.data.split('|')
         for index, elem in enumerate(id_list):
             id_list[index] = "".join(filter(str.isdecimal, elem))
         id_list.remove(str(callback.from_user.id))
@@ -96,7 +97,7 @@ async def subscribe_to_resource(callback: types.CallbackQuery, state: FSMContext
             await AdminState.user.set()
     # Adding resources to the list of the subscribes
     else:
-        resource_id, _, users_id = callback.data.split(',')
+        resource_id, _, users_id = callback.data.split('|')
         users_id = ast.literal_eval(users_id)
         users_id.append(str(callback.from_user.id))
         async with state.proxy() as data:
@@ -117,7 +118,7 @@ async def choose_resource(callback: types.CallbackQuery, state: FSMContext) -> N
         await exit_func(callback, state)
         return await AdminState.admin.set()
     async with state.proxy() as data:
-        data['resource_ip'], data['resource_name'], _ = callback.data.split(',')
+        data['resource_ip'], data['resource_name'], _ = callback.data.split('|')
         data["users_list"], data["current_users"] = await get_users(data['resource_ip'])
 
     if not data["users_list"]:
