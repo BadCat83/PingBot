@@ -8,12 +8,16 @@ from Keyboards.keyboards import admin_kb, choose_users_kb
 from Utils.formating import format_resources_list
 import Keyboards.keyboards as kb
 
+"""Secondary functions"""
+
 
 def return_user_data(user: types.User) -> tuple:
+    """Returns the user data. Unused yet"""
     return user.id, user.username, user.full_name
 
 
-async def authorization_on_startup(dp: Dispatcher):
+async def authorization_on_startup(dp: Dispatcher) -> None:
+    """Checks if user exist, assigns them their rights"""
     for user in await check_users_exist():
         state = dp.current_state(chat=user[0], user=user[0])
         await state.set_state(AdminState.admin if user[3] else AdminState.user)
@@ -26,6 +30,7 @@ async def create_new_user(
         dp: Dispatcher = None,
         is_administrator=False
 ) -> None:
+    """Creates new user of the system, registers the rights assigned by the admin to the database"""
     user_id = callback.message.text.split('"')[1]
     if state:
         data = await state.storage.get_data(chat=user_id, user=user_id)
@@ -51,6 +56,7 @@ async def create_new_user(
 
 
 async def get_users(resource_ip=None) -> tuple or list:
+    """Returns users list or users list with their id depending on whether the resource is in the request or not"""
     users_list = []
     all_users = await check_users_exist()
     if not resource_ip:
@@ -65,6 +71,7 @@ async def get_users(resource_ip=None) -> tuple or list:
 
 
 async def add_user(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """Adding a user to the selected resource"""
     user_id = callback.data.split('_')[2]
     async with state.proxy() as data:
         if 'users_id' not in data:
@@ -82,19 +89,23 @@ async def add_user(callback: types.CallbackQuery, state: FSMContext) -> None:
 
 
 async def exit_func(callback: types.CallbackQuery, state: FSMContext) -> None:
+    """This functions closes the dialog with users, clears all states"""
     await callback.message.delete()
     await callback.answer()
     await state.finish()
 
 
 async def get_resources_list(user_id: int) -> list:
+    """Returns resources list where the user is like subscriber"""
     resources_list = await get_resources()
     for resource in resources_list.copy():
         if str(user_id) not in ast.literal_eval(resource[3]):
             resources_list.remove(resource)
     return resources_list
 
+
 async def show_subscribes(msg: types.Message, state: FSMContext) -> None:
+    """Shows the list of the resources where the user is like subscriber"""
     resources_list = await get_resources_list(msg.chat.id)
     is_admin = 'admin' in (await state.get_state())
     if resources_list:
