@@ -5,6 +5,9 @@ from redis import Redis
 from Config.config import Settings
 import DB.sqlite as db
 
+"""Initializes the bot. Used as link"""
+
+
 storage = MemoryStorage()
 resources_storage = Redis(host='localhost', port=6379, decode_responses=True)
 config = Settings()
