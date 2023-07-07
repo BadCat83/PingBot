@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+
+  bot:
+    user: root
+    build: .
+    command: python /PingBot/main.py
+    restart: always
+
+  redis:
+    image: "redis:latest"
+    restart: always
+    ports:
+      - "6379:6379"
