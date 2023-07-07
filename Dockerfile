@@ -6,7 +6,9 @@ USER root
 
 WORKDIR /PingBot
 
-COPY . .
+RUN git clone https://github.com/BadCat83/PingBot.git
+
+# COPY . .
 
 RUN pip install -r requirements.txt
 
