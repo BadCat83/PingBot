@@ -9,7 +9,7 @@ import DB.sqlite as db
 
 
 storage = MemoryStorage()
-resources_storage = Redis(host='localhost', port=6379, decode_responses=True)
+resources_storage = Redis(host='redis', port=6379, decode_responses=True)
 config = Settings()
 
 bot = Bot(token=config.bot_token.get_secret_value(), parse_mode="HTML")
