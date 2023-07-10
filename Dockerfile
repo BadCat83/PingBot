@@ -6,10 +6,10 @@ USER root
 
 WORKDIR /PingBot
 
-RUN git clone https://github.com/BadCat83/PingBot.git
+RUN cd /PingBot && git clone https://github.com/BadCat83/PingBot.git
 
 # COPY . .
 
-RUN pip install -r requirements.txt
+RUN pip install -r /PingBot/requirements.txt
 
 #CMD ["python", "/PingBot/main.py"]
