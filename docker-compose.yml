@@ -5,7 +5,7 @@ services:
   bot:
     user: root
     build: .
-    command: python /PingBot/main.py
+    command: python main.py
     restart: always
 
   redis:

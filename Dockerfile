@@ -1,12 +1,12 @@
 FROM python:3.10-bullseye
 
-RUN mkdir -p /PingBot
+# RUN mkdir -p /PingBot
 
 USER root
 
-WORKDIR /PingBot
+RUN git clone https://github.com/BadCat83/PingBot.git
 
-RUN cd /PingBot && git clone https://github.com/BadCat83/PingBot.git
+WORKDIR /PingBot
 
 # COPY . .
 
