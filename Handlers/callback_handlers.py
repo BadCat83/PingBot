@@ -7,6 +7,7 @@ from Utils.func import create_new_user, get_users, add_user, exit_func, get_reso
 from init_bot import dp, bot, db, resources_storage
 import Keyboards.keyboards as kb
 import ast
+import re
 
 """Callback handlers"""
 
@@ -69,9 +70,8 @@ async def unsubscribe(callback: types.CallbackQuery, state: FSMContext) -> None:
         await AdminState.admin.set() if is_admin else await AdminState.user.set()
         return await show_subscribes(callback.message, state)
     else:
-        ip, name, *id_list = callback.data.split('|')
-        for index, elem in enumerate(id_list):
-            id_list[index] = "".join(filter(str.isdecimal, elem))
+        ip, name, ids = callback.data.split('|')
+        id_list = re.findall(r'\d+', ids)
         id_list.remove(str(callback.from_user.id))
         await db.update_res_users(id_list, ip)
         await callback.message.answer(f"Вы отписались от мониторинга ресурса {name}!",
